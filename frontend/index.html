@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anime AI Agent</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div id="particles-bg"></div>
+
+    <!-- Header -->
+    <header class="header">
+        <div class="logo">
+            <span class="logo-icon">&#x2728;</span>
+            <h1>ANIME AI AGENT</h1>
+            <span class="logo-subtitle">AI-Powered Anime Video Creator</span>
+        </div>
+        <div class="status-bar">
+            <div class="status-dot" id="status-dot"></div>
+            <span id="status-text">Connecting...</span>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Input Section -->
+        <section class="input-section" id="input-section">
+            <div class="input-card">
+                <h2>Describe Your Anime</h2>
+                <p class="input-hint">Describe your anime story, characters, and world. The AI agent will analyze your text, design characters, create scenes, animate, and produce a complete video.</p>
+                <textarea id="story-input" placeholder="Example: A young samurai named Kaito discovers a legendary sword hidden in an ancient temple deep in the mountains. The sword grants him incredible powers but also awakens a dark force that threatens to destroy his village. With the help of a mysterious priestess named Yuki who has the power to communicate with spirits, Kaito must master the sword's abilities and confront the ancient evil before it's too late. Their journey takes them through enchanted forests, floating islands, and the ruins of a forgotten civilization..."
+                rows="8"></textarea>
+                <div class="input-actions">
+                    <button class="btn btn-primary" id="create-btn" onclick="startCreation()">
+                        <span class="btn-icon">&#x1F3AC;</span> Create Anime
+                    </button>
+                    <button class="btn btn-secondary" onclick="loadExample()">
+                        <span class="btn-icon">&#x1F4D6;</span> Load Example
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Pipeline Progress Section -->
+        <section class="pipeline-section hidden" id="pipeline-section">
+            <h2>Creation Pipeline</h2>
+            <div class="pipeline-stages">
+                <div class="stage" id="stage-text_analysis" data-stage="text_analysis">
+                    <div class="stage-icon">&#x1F4DD;</div>
+                    <div class="stage-info">
+                        <h3>Story Analysis</h3>
+                        <p class="stage-desc">Analyzing text, extracting characters, themes & world</p>
+                        <div class="stage-progress"><div class="stage-progress-bar"></div></div>
+                    </div>
+                    <div class="stage-status">Waiting</div>
+                </div>
+                <div class="stage" id="stage-storyboard" data-stage="storyboard">
+                    <div class="stage-icon">&#x1F3AC;</div>
+                    <div class="stage-info">
+                        <h3>Storyboard</h3>
+                        <p class="stage-desc">Creating scene-by-scene storyboard with camera directions</p>
+                        <div class="stage-progress"><div class="stage-progress-bar"></div></div>
+                    </div>
+                    <div class="stage-status">Waiting</div>
+                </div>
+                <div class="stage" id="stage-character_design" data-stage="character_design">
+                    <div class="stage-icon">&#x1F3A8;</div>
+                    <div class="stage-info">
+                        <h3>Character Design</h3>
+                        <p class="stage-desc">Designing anime characters with multiple poses</p>
+                        <div class="stage-progress"><div class="stage-progress-bar"></div></div>
+                    </div>
+                    <div class="stage-status">Waiting</div>
+                </div>
+                <div class="stage" id="stage-scene_generation" data-stage="scene_generation">
+                    <div class="stage-icon">&#x1F5BC;</div>
+                    <div class="stage-info">
+                        <h3>Scene Generation</h3>
+                        <p class="stage-desc">Generating backgrounds and scene compositions</p>
+                        <div class="stage-progress"><div class="stage-progress-bar"></div></div>
+                    </div>
+                    <div class="stage-status">Waiting</div>
+                </div>
+                <div class="stage" id="stage-animation" data-stage="animation">
+                    <div class="stage-icon">&#x1F4F9;</div>
+                    <div class="stage-info">
+                        <h3>Animation</h3>
+                        <p class="stage-desc">Applying Ken Burns, parallax & transition effects</p>
+                        <div class="stage-progress"><div class="stage-progress-bar"></div></div>
+                    </div>
+                    <div class="stage-status">Waiting</div>
+                </div>
+                <div class="stage" id="stage-video_assembly" data-stage="video_assembly">
+                    <div class="stage-icon">&#x1F39E;</div>
+                    <div class="stage-info">
+                        <h3>Video Assembly</h3>
+                        <p class="stage-desc">Assembling final video with transitions & overlays</p>
+                        <div class="stage-progress"><div class="stage-progress-bar"></div></div>
+                    </div>
+                    <div class="stage-status">Waiting</div>
+                </div>
+            </div>
+
+            <!-- Overall Progress -->
+            <div class="overall-progress">
+                <div class="progress-header">
+                    <span>Overall Progress</span>
+                    <span id="progress-percent">0%</span>
+                </div>
+                <div class="progress-bar-container">
+                    <div class="progress-bar" id="overall-progress-bar"></div>
+                </div>
+                <p class="progress-message" id="progress-message">Initializing...</p>
+            </div>
+        </section>
+
+        <!-- Details Panel -->
+        <section class="details-section hidden" id="details-section">
+            <!-- Analysis Details -->
+            <div class="detail-card hidden" id="analysis-card">
+                <h3>&#x1F4DD; Story Analysis</h3>
+                <div id="analysis-content"></div>
+            </div>
+
+            <!-- Storyboard Details -->
+            <div class="detail-card hidden" id="storyboard-card">
+                <h3>&#x1F3AC; Storyboard</h3>
+                <div id="storyboard-content"></div>
+            </div>
+
+            <!-- Characters Gallery -->
+            <div class="detail-card hidden" id="characters-card">
+                <h3>&#x1F3A8; Character Designs</h3>
+                <div class="characters-gallery" id="characters-gallery"></div>
+            </div>
+
+            <!-- Scenes Gallery -->
+            <div class="detail-card hidden" id="scenes-card">
+                <h3>&#x1F5BC; Generated Scenes</h3>
+                <div class="scenes-gallery" id="scenes-gallery"></div>
+            </div>
+        </section>
+
+        <!-- Result Section -->
+        <section class="result-section hidden" id="result-section">
+            <div class="result-card">
+                <h2>&#x1F389; Your Anime is Ready!</h2>
+                <div class="video-container">
+                    <video id="result-video" controls>
+                        <source src="" type="video/mp4">
+                    </video>
+                </div>
+                <div class="result-info" id="result-info"></div>
+                <div class="result-actions">
+                    <button class="btn btn-primary" onclick="downloadVideo()">
+                        <span class="btn-icon">&#x2B07;</span> Download Video
+                    </button>
+                    <button class="btn btn-secondary" onclick="createNew()">
+                        <span class="btn-icon">&#x2795;</span> Create Another
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Error Section -->
+        <section class="error-section hidden" id="error-section">
+            <div class="error-card">
+                <h2>&#x26A0; Something went wrong</h2>
+                <p id="error-message"></p>
+                <button class="btn btn-secondary" onclick="createNew()">Try Again</button>
+            </div>
+        </section>
+    </main>
+
+    <!-- Log Panel -->
+    <div class="log-panel" id="log-panel">
+        <div class="log-header" onclick="toggleLog()">
+            <span>&#x1F4CB; Agent Log</span>
+            <span class="log-toggle" id="log-toggle">&#x25B2;</span>
+        </div>
+        <div class="log-content" id="log-content"></div>
+    </div>
+
+    <script src="/static/js/app.js"></script>
+</body>
+</html>
