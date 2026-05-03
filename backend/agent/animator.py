@@ -1,5 +1,6 @@
 """Animator - Applies animation effects to static scene images."""
 
+import asyncio
 import logging
 import math
 from pathlib import Path
@@ -139,6 +140,10 @@ class Animator:
 
             frame_path = output_dir / f"frame_{frame_idx:06d}.png"
             frame.save(str(frame_path), "PNG")
+
+            # Yield to event loop periodically so WebSocket messages flush
+            if frame_idx % 12 == 0:
+                await asyncio.sleep(0)
 
         return total_frames
 

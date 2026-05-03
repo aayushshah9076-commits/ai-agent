@@ -28,11 +28,13 @@ class ConnectionManager:
     async def broadcast(self, message: dict[str, Any]):
         """Send message to all connected clients."""
         text = json.dumps(message)
+        logger.info(f"WS broadcast ({len(self.active_connections)} clients): type={message.get('type')} stage={message.get('stage')} progress={message.get('progress')}")
         disconnected = []
         for connection in self.active_connections:
             try:
                 await connection.send_text(text)
-            except Exception:
+            except Exception as e:
+                logger.warning(f"WS send failed: {e}")
                 disconnected.append(connection)
 
         for conn in disconnected:

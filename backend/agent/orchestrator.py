@@ -1,6 +1,7 @@
 """Orchestrator - Main AI agent that coordinates the entire anime creation pipeline."""
 
 import asyncio
+import functools
 import logging
 import time
 from pathlib import Path
@@ -83,6 +84,18 @@ class Orchestrator:
         logger.info(f"Agent initialized: {status}")
         return status
 
+    async def _emit(self, *args, **kwargs):
+        """Send WebSocket progress and yield to event loop so it flushes."""
+        await self.ws.send_progress(*args, **kwargs)
+        await asyncio.sleep(0.05)
+
+    async def _run_cpu(self, fn, *args, **kwargs):
+        """Run a CPU-bound coroutine in a thread so the event loop stays free."""
+        loop = asyncio.get_event_loop()
+        if asyncio.iscoroutinefunction(fn):
+            return await fn(*args, **kwargs)
+        return await loop.run_in_executor(None, functools.partial(fn, *args, **kwargs))
+
     async def create_anime(self, input_text: str, project_id: str | None = None) -> ProjectState:
         """Execute the full anime creation pipeline."""
         if not project_id:
@@ -96,12 +109,12 @@ class Orchestrator:
             # Stage 1: Text Analysis (0-15%)
             state.status = "analyzing"
             state.current_stage = "text_analysis"
-            await self.ws.send_progress("text_analysis", "start", 0, "Analyzing your story concept...")
+            await self._emit("text_analysis", "start", 0, "Analyzing your story concept...")
 
             state.analysis = await self.text_analyzer.analyze(input_text)
             state.progress = 15
 
-            await self.ws.send_progress(
+            await self._emit(
                 "text_analysis", "complete", 15,
                 f"Story analyzed: '{state.analysis.title}' - {state.analysis.genre}",
                 {"analysis": state.analysis.to_dict()},
@@ -109,12 +122,12 @@ class Orchestrator:
 
             # Stage 2: Storyboard Generation (15-25%)
             state.current_stage = "storyboard"
-            await self.ws.send_progress("storyboard", "start", 15, "Creating storyboard...")
+            await self._emit("storyboard", "start", 15, "Creating storyboard...")
 
             state.storyboard = await self.storyboard_gen.generate(state.analysis)
             state.progress = 25
 
-            await self.ws.send_progress(
+            await self._emit(
                 "storyboard", "complete", 25,
                 f"Storyboard created: {len(state.storyboard.scenes)} scenes, {state.storyboard.total_duration}s",
                 {"storyboard": state.storyboard.to_dict()},
@@ -122,14 +135,15 @@ class Orchestrator:
 
             # Stage 3: Character Design (25-40%)
             state.current_stage = "character_design"
-            await self.ws.send_progress("character_design", "start", 25, "Designing characters...")
+            await self._emit("character_design", "start", 25, "Designing characters...")
 
             state.characters = await self.character_designer.design_characters(
                 state.analysis, state.project_dir
             )
             state.progress = 40
+            await asyncio.sleep(0)
 
-            await self.ws.send_progress(
+            await self._emit(
                 "character_design", "complete", 40,
                 f"Designed {len(state.characters)} characters",
                 {"characters": [c.to_dict() for c in state.characters]},
@@ -138,14 +152,15 @@ class Orchestrator:
             # Stage 4: Scene Generation (40-65%)
             state.current_stage = "scene_generation"
             total_scenes = len(state.storyboard.scenes)
-            await self.ws.send_progress("scene_generation", "start", 40, f"Generating {total_scenes} scenes...")
+            await self._emit("scene_generation", "start", 40, f"Generating {total_scenes} scenes...")
 
             state.scenes = await self.scene_generator.generate_scenes(
                 state.storyboard.scenes, state.characters, state.project_dir
             )
             state.progress = 65
+            await asyncio.sleep(0)
 
-            await self.ws.send_progress(
+            await self._emit(
                 "scene_generation", "complete", 65,
                 f"Generated {len(state.scenes)} scene images",
                 {"scenes": [s.to_dict() for s in state.scenes]},
@@ -153,22 +168,23 @@ class Orchestrator:
 
             # Stage 5: Animation (65-85%)
             state.current_stage = "animation"
-            await self.ws.send_progress("animation", "start", 65, "Animating scenes...")
+            await self._emit("animation", "start", 65, "Animating scenes...")
 
             state.animated_scenes = await self.animator.animate_scenes(
                 state.scenes, state.project_dir
             )
             state.progress = 85
+            await asyncio.sleep(0)
 
             total_frames = sum(a.frame_count for a in state.animated_scenes)
-            await self.ws.send_progress(
+            await self._emit(
                 "animation", "complete", 85,
                 f"Animation complete: {total_frames} frames generated",
             )
 
             # Stage 6: Video Assembly (85-100%)
             state.current_stage = "video_assembly"
-            await self.ws.send_progress("video_assembly", "start", 85, "Assembling final video...")
+            await self._emit("video_assembly", "start", 85, "Assembling final video...")
 
             state.output_video = await self.video_assembler.assemble(
                 state.animated_scenes,
@@ -190,6 +206,7 @@ class Orchestrator:
             }
 
             await self.ws.send_complete(result)
+            await asyncio.sleep(0.05)
             logger.info(f"Anime creation complete: {result}")
 
             return state

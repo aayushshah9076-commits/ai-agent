@@ -1,5 +1,6 @@
 """Character Designer - Creates consistent anime character designs."""
 
+import asyncio
 import logging
 from pathlib import Path
 
@@ -72,6 +73,7 @@ class CharacterDesigner:
             designs.append(design)
 
             logger.info(f"Character '{name}' designed with {len(images)} reference images")
+            await asyncio.sleep(0)
 
         return designs
 

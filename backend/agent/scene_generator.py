@@ -1,5 +1,6 @@
 """Scene Generator - Creates background and scene images."""
 
+import asyncio
 import logging
 from pathlib import Path
 
@@ -79,6 +80,7 @@ class SceneGenerator:
 
             generated.append(gen_scene)
             logger.info(f"Scene {scene.scene_number} generated")
+            await asyncio.sleep(0)
 
         return generated
 
